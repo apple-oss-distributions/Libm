@@ -135,22 +135,19 @@ extern long  dec2l(const decimal * d)                         AVAILABLE_MAC_OS_X
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
- * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
+ * The contents of this file constitute Original Code as defined in and
+ * are subject to the Apple Public Source License Version 1.1 (the
+ * "License").  You may not use this file except in compliance with the
+ * License.  Please obtain a copy of the License at
+ * http://www.apple.com/publicsource and read it before using this file.
  * 
- * This file contains Original Code and/or Modifications of Original Code
- * as defined in and that are subject to the Apple Public Source License
- * Version 2.0 (the 'License'). You may not use this file except in
- * compliance with the License. Please obtain a copy of the License at
- * http://www.opensource.apple.com/apsl/ and read it before using this
- * file.
- * 
- * The Original Code and all software distributed under the License are
- * distributed on an 'AS IS' basis, WITHOUT WARRANTY OF ANY KIND, EITHER
+ * This Original Code and all software distributed under the License are
+ * distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, AND APPLE HEREBY DISCLAIMS ALL SUCH WARRANTIES,
  * INCLUDING WITHOUT LIMITATION, ANY WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE, QUIET ENJOYMENT OR NON-INFRINGEMENT.
- * Please see the License for the specific language governing rights and
- * limitations under the License.
+ * FITNESS FOR A PARTICULAR PURPOSE OR NON-INFRINGEMENT.  Please see the
+ * License for the specific language governing rights and limitations
+ * under the License.
  * 
  * @APPLE_LICENSE_HEADER_END@
  */
@@ -209,6 +206,7 @@ extern long  dec2l(const decimal * d)                         AVAILABLE_MAC_OS_X
 #define SIGSIZE8 (SIGSIZE == 8)
 #define FORDBGRORSIG8 (FORDEBUGGER || SIGSIZE8)
 
+#if 0
 struct decimal {
 	char 							sgn;						/* sign 0 for +, 1 for - */
 	char 							unused;
@@ -227,6 +225,7 @@ struct decform {
 	short 							digits;
 };
 typedef struct decform decform;
+#endif
 
 
 //#define SIGDIGLEN 128						/* significant decimal digits */
@@ -282,14 +281,14 @@ void str2dec(const char *s,short *ix,decimal *d,short *vp);
 struct big {
 	long exp;
 	union {
-	unsigned long lng [SIGSIZE];
-	unsigned short shrt [2*SIGSIZE];
+	uint32_t lng [SIGSIZE];
+	uint16_t shrt [2*SIGSIZE];
 		} sig;
 };
 
 typedef struct big big;
 
-void bigtenpower (const long n, big *y );
+void bigtenpower (const int32_t n, big *y );
 void axb2c ( big *a, big *b, big *c, int finishRounding );
 void adivb2c ( big *a, big *b, big *c );
 void biggetsig ( big *s, decimal *d );

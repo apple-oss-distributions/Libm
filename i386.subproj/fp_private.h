@@ -3,22 +3,19 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
- * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
+ * The contents of this file constitute Original Code as defined in and
+ * are subject to the Apple Public Source License Version 1.1 (the
+ * "License").  You may not use this file except in compliance with the
+ * License.  Please obtain a copy of the License at
+ * http://www.apple.com/publicsource and read it before using this file.
  * 
- * This file contains Original Code and/or Modifications of Original Code
- * as defined in and that are subject to the Apple Public Source License
- * Version 2.0 (the 'License'). You may not use this file except in
- * compliance with the License. Please obtain a copy of the License at
- * http://www.opensource.apple.com/apsl/ and read it before using this
- * file.
- * 
- * The Original Code and all software distributed under the License are
- * distributed on an 'AS IS' basis, WITHOUT WARRANTY OF ANY KIND, EITHER
+ * This Original Code and all software distributed under the License are
+ * distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, AND APPLE HEREBY DISCLAIMS ALL SUCH WARRANTIES,
  * INCLUDING WITHOUT LIMITATION, ANY WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE, QUIET ENJOYMENT OR NON-INFRINGEMENT.
- * Please see the License for the specific language governing rights and
- * limitations under the License.
+ * FITNESS FOR A PARTICULAR PURPOSE OR NON-INFRINGEMENT.  Please see the
+ * License for the specific language governing rights and limitations
+ * under the License.
  * 
  * @APPLE_LICENSE_HEADER_END@
  */
@@ -32,6 +29,7 @@
 
 #ifndef __FP_PRIVATE__
 #define __FP_PRIVATE__
+#include "stdint.h"
 
 /******************************************************************************
 *       Functions used internally                                             *
@@ -40,9 +38,17 @@ double   copysign ( double arg2, double arg1 );
 double	 fabs ( double x );
 double   nan   ( const char *string );
 
-/* gcc 2.95 inlines fabs() and fabsf() of its own accord (as single instructions!) */ 
-#define      __FABS(x)	fabs(x)
-#define      __FABSF(x)	fabsf(x)
+/* gcc inlines fabs() and fabsf()  */ 
+#define      __FABS(x)	__builtin_fabs(x)
+#define      __FABSF(x)	__builtin_fabsf(x)
+
+#if defined(__APPLE_CC__)
+#define likely(x) __builtin_expect(!!(x), 1)
+#define unlikely(x) __builtin_expect((x), 0)
+#else
+#define likely(x) (x)
+#define unlikely(x) (x)
+#endif
 
 /******************************************************************************
 *       Single precision                                                      *
@@ -51,7 +57,7 @@ double   nan   ( const char *string );
 #define       fQuietNan           0x00400000
 
 typedef union {
-       long int       lval;
+       int32_t		  lval;
        float          fval;
 } hexsingle;
 
@@ -64,8 +70,8 @@ typedef union {
 #if defined(__BIG_ENDIAN__)
 typedef union {
        struct {
-		unsigned long hi;
-		unsigned long lo;
+		uint32_t hi;
+		uint32_t lo;
 	} i;
        double            d;
 } hexdouble;
@@ -75,8 +81,8 @@ typedef union {
 #elif defined(__LITTLE_ENDIAN__)
 typedef union {
        struct {
-		unsigned long lo;
-		unsigned long hi;
+		uint32_t lo;
+		uint32_t hi;
 	} i;
        double            d;
 } hexdouble;
@@ -95,9 +101,9 @@ typedef union {
 
 typedef union {
         struct {
-        unsigned long    least_mantissa;
-        unsigned long    most_mantissa;
-        unsigned short	 head;
+        uint32_t     least_mantissa;
+        uint32_t     most_mantissa;
+        uint16_t	 head;
         } u;
         long double      e80;
 } hexlongdouble;

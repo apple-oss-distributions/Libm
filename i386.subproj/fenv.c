@@ -3,22 +3,19 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
- * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
+ * The contents of this file constitute Original Code as defined in and
+ * are subject to the Apple Public Source License Version 1.1 (the
+ * "License").  You may not use this file except in compliance with the
+ * License.  Please obtain a copy of the License at
+ * http://www.apple.com/publicsource and read it before using this file.
  * 
- * This file contains Original Code and/or Modifications of Original Code
- * as defined in and that are subject to the Apple Public Source License
- * Version 2.0 (the 'License'). You may not use this file except in
- * compliance with the License. Please obtain a copy of the License at
- * http://www.opensource.apple.com/apsl/ and read it before using this
- * file.
- * 
- * The Original Code and all software distributed under the License are
- * distributed on an 'AS IS' basis, WITHOUT WARRANTY OF ANY KIND, EITHER
+ * This Original Code and all software distributed under the License are
+ * distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, AND APPLE HEREBY DISCLAIMS ALL SUCH WARRANTIES,
  * INCLUDING WITHOUT LIMITATION, ANY WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE, QUIET ENJOYMENT OR NON-INFRINGEMENT.
- * Please see the License for the specific language governing rights and
- * limitations under the License.
+ * FITNESS FOR A PARTICULAR PURPOSE OR NON-INFRINGEMENT.  Please see the
+ * License for the specific language governing rights and limitations
+ * under the License.
  * 
  * @APPLE_LICENSE_HEADER_END@
  */
@@ -46,8 +43,6 @@
 *           -fschedule-insns -finline-functions -funroll-all-loops             *
 *                                                                              *
 *******************************************************************************/
-#ifdef      __APPLE_CC__
-#if         __APPLE_CC__ > 930
 
 #include "fenv.h"
 
@@ -56,10 +51,10 @@
 
 /* iapx-v1 Figure 7-13 */
 typedef struct {
-    unsigned short int __control;
-    unsigned short int __reserved1;
-    unsigned short int __status;
-    unsigned short int __reserved2;
+    unsigned short __control;
+    unsigned short __reserved1;
+    unsigned short __status;
+    unsigned short __reserved2;
     unsigned int __private3;
     unsigned int __private4;
     unsigned int __private5;
@@ -107,10 +102,11 @@ const fenv_t _FE_DFL_ENV = (const fenv_t) { FE_TONEAREST | FE_ALL_EXCEPT , 0 };
    argument. 
 ****************************************************************************/
 
-void feclearexcept ( int excepts )
+int feclearexcept ( int excepts )
 {
     fexcept_t zero = 0;
     _fesetexceptflag ( &zero, excepts );
+    return 0;
 }
 
 /****************************************************************************
@@ -118,12 +114,13 @@ void feclearexcept ( int excepts )
    argument.
 ****************************************************************************/
 
-void feraiseexcept ( int excepts )
+int feraiseexcept ( int excepts )
 {
     fexcept_t t = excepts;
     
     _fesetexceptflag ( &t, excepts );
     asm volatile ("fwait"); 			// and raise the exception(s)
+    return 0;
 }
       
 /****************************************************************************
@@ -193,7 +190,7 @@ fesetround (int round)
    object pointed to by its pointer argument "envp".
 ****************************************************************************/
    
-void fegetenv ( fenv_t *envp )
+int fegetenv ( fenv_t *envp )
 {
     __fpustate_t currfpu;
     
@@ -201,6 +198,7 @@ void fegetenv ( fenv_t *envp )
     
     envp->__control = currfpu.__control;
     envp->__status = currfpu.__status;
+    return 0;
 }
 
 
@@ -234,7 +232,7 @@ int feholdexcept ( fenv_t *envp )
    defined macro of type "fenv_t".
 ****************************************************************************/
    
-void fesetenv ( const fenv_t *envp )
+int fesetenv ( const fenv_t *envp )
 {
     __fpustate_t currfpu;
     asm volatile ("fnstenv %0" : "=m" (currfpu));
@@ -246,6 +244,7 @@ void fesetenv ( const fenv_t *envp )
     currfpu.__status |= ( envp->__status & FE_ALL_EXCEPT );
     
     asm volatile ("fldenv %0" : : "m" (currfpu));
+    return 0;
 }
 
 /****************************************************************************
@@ -257,7 +256,7 @@ void fesetenv ( const fenv_t *envp )
    hide spurious exceptions from their callers.
 ****************************************************************************/
    
-void feupdateenv ( const fenv_t *envp )
+int feupdateenv ( const fenv_t *envp )
 {
     __fpustate_t currfpu;
     asm volatile ("fnstenv %0" : "=m" (currfpu));
@@ -269,6 +268,7 @@ void feupdateenv ( const fenv_t *envp )
     
     asm volatile ("fldenv %0" : : "m" (currfpu)); // install envp's control word, preserving status word
     asm volatile ("fwait"); 			  // and raise the exception(s)
+    return 0;
 }
 
 
@@ -291,9 +291,10 @@ void fesetexcept ( fexcept_t *flagp, int excepts )
    by the argument "excepts" through the pointer argument "flagp".
 ****************************************************************************/
 
-void fegetexceptflag ( fexcept_t *flagp, int excepts )
+int fegetexceptflag ( fexcept_t *flagp, int excepts )
 {
     _fegetexceptflag (flagp, excepts );
+    return 0;
 }
 
 /****************************************************************************
@@ -303,9 +304,10 @@ void fegetexceptflag ( fexcept_t *flagp, int excepts )
    flags.
 ****************************************************************************/
 
-void fesetexceptflag ( const fexcept_t *flagp, int excepts )
+int fesetexceptflag ( const fexcept_t *flagp, int excepts )
 {
     _fesetexceptflag ( flagp, excepts );
+    return 0;
 }
 
 /****************************************************************************
@@ -331,8 +333,3 @@ int __fegetfltrounds( void )
 }
 
 #endif /* !BUILDING_FOR_CARBONCORE_LEGACY */
-
-#else       /* __APPLE_CC__ version */
-#warning A higher version than gcc-932 is required.
-#endif      /* __APPLE_CC__ version */
-#endif      /* __APPLE_CC__ */

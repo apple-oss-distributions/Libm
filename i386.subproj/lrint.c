@@ -3,22 +3,19 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
- * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
+ * The contents of this file constitute Original Code as defined in and
+ * are subject to the Apple Public Source License Version 1.1 (the
+ * "License").  You may not use this file except in compliance with the
+ * License.  Please obtain a copy of the License at
+ * http://www.apple.com/publicsource and read it before using this file.
  * 
- * This file contains Original Code and/or Modifications of Original Code
- * as defined in and that are subject to the Apple Public Source License
- * Version 2.0 (the 'License'). You may not use this file except in
- * compliance with the License. Please obtain a copy of the License at
- * http://www.opensource.apple.com/apsl/ and read it before using this
- * file.
- * 
- * The Original Code and all software distributed under the License are
- * distributed on an 'AS IS' basis, WITHOUT WARRANTY OF ANY KIND, EITHER
+ * This Original Code and all software distributed under the License are
+ * distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, AND APPLE HEREBY DISCLAIMS ALL SUCH WARRANTIES,
  * INCLUDING WITHOUT LIMITATION, ANY WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE, QUIET ENJOYMENT OR NON-INFRINGEMENT.
- * Please see the License for the specific language governing rights and
- * limitations under the License.
+ * FITNESS FOR A PARTICULAR PURPOSE OR NON-INFRINGEMENT.  Please see the
+ * License for the specific language governing rights and limitations
+ * under the License.
  * 
  * @APPLE_LICENSE_HEADER_END@
  */
@@ -46,13 +43,85 @@
 *                                                                              *
 *******************************************************************************/
 #include "math.h"
+#include "fenv.h"
+#include "limits.h"
+#include "fp_private.h"
 
+// These work just as well for the LP64 ABI
 long int lrint ( double x )
 {
-    return (long int)rint( x );
+	double t;
+	long int result;
+	fenv_t env;
+	
+	if (unlikely(x != x))
+	{
+		feraiseexcept(FE_INVALID);
+		return LONG_MIN;
+	}
+	
+	(void)fegetenv(&env);
+	t = rint ( x );
+	(void)fesetenv(&env);
+	
+	if ( t < (double)LONG_MIN )
+	{
+		feraiseexcept(FE_INVALID);
+		result = LONG_MIN;
+	}
+	else if ( t > (double)LONG_MAX )
+	{
+		feraiseexcept(FE_INVALID);
+		result = LONG_MAX;
+	}
+	else if (t != x)
+	{
+		feraiseexcept(FE_INEXACT);
+		result = (long int) t;
+	}
+	else
+	{
+		result = (long int) t;
+	}
+	
+    return result;
 }
 
 long int lrintf (float x)
 {
-    return (long int)rintf ( x );
+	float t;
+	long int result;
+	fenv_t env;
+	
+	if (unlikely(x != x))
+	{
+		feraiseexcept(FE_INVALID);
+		return LONG_MIN;
+	}
+	
+	(void)fegetenv(&env);
+	t = rintf ( x );
+	(void)fesetenv(&env);
+	
+	if ( t < (float)LONG_MIN )
+	{
+		feraiseexcept(FE_INVALID);
+		result = LONG_MIN;
+	}
+	else if ( t > (float)LONG_MAX )
+	{
+		feraiseexcept(FE_INVALID);
+		result = LONG_MAX;
+	}
+	else if (t != x)
+	{
+		feraiseexcept(FE_INEXACT);
+		result = (long int) t;
+	}
+	else
+	{
+		result = (long int) t;
+	}
+	
+    return result;
 }

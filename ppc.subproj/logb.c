@@ -3,22 +3,19 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
- * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
+ * The contents of this file constitute Original Code as defined in and
+ * are subject to the Apple Public Source License Version 1.1 (the
+ * "License").  You may not use this file except in compliance with the
+ * License.  Please obtain a copy of the License at
+ * http://www.apple.com/publicsource and read it before using this file.
  * 
- * This file contains Original Code and/or Modifications of Original Code
- * as defined in and that are subject to the Apple Public Source License
- * Version 2.0 (the 'License'). You may not use this file except in
- * compliance with the License. Please obtain a copy of the License at
- * http://www.opensource.apple.com/apsl/ and read it before using this
- * file.
- * 
- * The Original Code and all software distributed under the License are
- * distributed on an 'AS IS' basis, WITHOUT WARRANTY OF ANY KIND, EITHER
+ * This Original Code and all software distributed under the License are
+ * distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, AND APPLE HEREBY DISCLAIMS ALL SUCH WARRANTIES,
  * INCLUDING WITHOUT LIMITATION, ANY WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE, QUIET ENJOYMENT OR NON-INFRINGEMENT.
- * Please see the License for the specific language governing rights and
- * limitations under the License.
+ * FITNESS FOR A PARTICULAR PURPOSE OR NON-INFRINGEMENT.  Please see the
+ * License for the specific language governing rights and limitations
+ * under the License.
  * 
  * @APPLE_LICENSE_HEADER_END@
  */
@@ -82,22 +79,17 @@
 *     Standard 754.                                                            *
 *******************************************************************************/
 
-#ifdef      __APPLE_CC__
-#if         __APPLE_CC__ > 930
-
 #include      "math.h"
 #include      "fenv.h"
 #include      "fp_private.h"
 #include      "fenv_private.h"
 
-static const double twoTo52 = 4.50359962737049600e15;              // 0x1p52
+static const double twoTo52 = 0x1.0p+52; // 4.50359962737049600e15;
 static const double klTod = 4503601774854144.0;                    // 0x1.000008p52
 static const hexdouble minusInf  = HEXDOUBLE(0xfff00000, 0x00000000);
 
-static const double twoTo23 = 8388608.0e0;              	   // 0x1p23
+static const float twoTo23 = 0x1.0p+23; // 8388608.0e0;
 static const hexsingle minusInff  = { 0xff800000 };
-
-#define INT_MAX	(2147483647)
 
 /*******************************************************************************
 *                                    L  O  G  B                                *
@@ -112,12 +104,15 @@ static const hexsingle minusInff  = { 0xff800000 };
 double logb (  double x  )
 {
       hexdouble xInHex;
-      long int shiftedExp;
+      int32_t shiftedExp;
       
       xInHex.d = x;
+      __NOOP;
+      __NOOP;
+      __NOOP;
       shiftedExp = ( xInHex.i.hi & 0x7ff00000 ) >> 20;
       
-      if ( shiftedExp == 2047 ) 
+      if (unlikely( shiftedExp == 2047 )) 
       {                                                  // NaN or INF
             if ( ( ( xInHex.i.hi & 0x80000000 ) == 0 ) || ( x != x ) )
                   return x;                              // NaN or +INF return x
@@ -125,28 +120,34 @@ double logb (  double x  )
                   return -x;                             // -INF returns +INF
       }
       
-      if ( shiftedExp != 0 )                             // normal number
+      if (likely( shiftedExp != 0 ))                     // normal number
             shiftedExp -= 1023;                          // unbias exponent
       else if ( x == 0.0 ) 
       {                                                  // zero
             hexdouble OldEnvironment;
-            FEGETENVD( OldEnvironment.d );             // raise zero divide for DOMAIN error
+            FEGETENVD_GRP( OldEnvironment.d );		 // raise zero divide for DOMAIN error
             OldEnvironment.i.lo |= FE_DIVBYZERO;
-            FESETENVD( OldEnvironment.d );
+            FESETENVD_GRP( OldEnvironment.d );
             return ( minusInf.d );			 // return -infinity
       }
       else 
       {                                                  // subnormal number
             xInHex.d *= twoTo52;                         // scale up
+	    __NOOP;
+	    __NOOP;
+	    __NOOP;
             shiftedExp = ( xInHex.i.hi & 0x7ff00000 ) >> 20;
             shiftedExp -= 1075;                          // unbias exponent
       }
       
-      if ( shiftedExp == 0 )                             // zero result
+      if (unlikely( shiftedExp == 0 ))                  // zero result
             return ( 0.0 );
       else 
       {                                                  // nonzero result
             xInHex.d = klTod;
+	    __NOOP;
+	    __NOOP;
+	    __NOOP;
             xInHex.i.lo += shiftedExp;
             return ( xInHex.d - klTod );
       }
@@ -155,28 +156,38 @@ double logb (  double x  )
 int ilogb (  double x  )
 {
       hexdouble xInHex;
-      long int shiftedExp;
+      int32_t shiftedExp;
       
       xInHex.d = x;
+      __NOOP;
+      __NOOP;
+      __NOOP;
       shiftedExp = ( xInHex.i.hi & 0x7ff00000 ) >> 20;
       
-      if ( shiftedExp == 2047 ) 
+      if (unlikely( shiftedExp == 2047 )) 
       {                                                  // NaN or INF
             if (x != x)
                 return FP_ILOGBNAN;
             else
-                return INT_MAX;
+	    {
+		feraiseexcept( FE_INVALID );		 // raise invalid for DOMAIN error
+                return INT32_MAX;
+	    }
       }
       
-      if ( shiftedExp != 0 )                             // normal number
+      if (likely( shiftedExp != 0 ))                     // normal number
             shiftedExp -= 1023;                          // unbias exponent
       else if ( x == 0.0 ) 
       {                                                  // zero
+            feraiseexcept( FE_INVALID );		 // raise invalid for DOMAIN error
             return FP_ILOGB0;			 	 // return -infinity
       }
       else 
       {                                                  // subnormal number
             xInHex.d *= twoTo52;                         // scale up
+	    __NOOP;
+	    __NOOP;
+	    __NOOP;
             shiftedExp = ( xInHex.i.hi & 0x7ff00000 ) >> 20;
             shiftedExp -= 1075;                          // unbias exponent
       }
@@ -187,12 +198,15 @@ int ilogb (  double x  )
 float logbf (  float x  )
 {
       hexsingle xInHex;
-      long int shiftedExp;
+      int32_t shiftedExp;
       
       xInHex.fval = x;
+      __NOOP;
+      __NOOP;
+      __NOOP;
       shiftedExp = ( xInHex.lval & 0x7f800000 ) >> 23;
       
-      if ( shiftedExp == 255 ) 
+      if (unlikely( shiftedExp == 255 )) 
       {                                                  // NaN or INF
             if ( ( ( xInHex.lval & 0x80000000 ) == 0 ) || ( x != x ) )
                   return x;                              // NaN or +INF return x
@@ -200,19 +214,22 @@ float logbf (  float x  )
                   return -x;                             // -INF returns +INF
       }
       
-      if ( shiftedExp != 0 )                             // normal number
+      if (likely( shiftedExp != 0 ))                     // normal number
             shiftedExp -= 127;                           // unbias exponent
       else if ( x == 0.0 ) 
       {                                                  // zero
             hexdouble OldEnvironment;
-            FEGETENVD( OldEnvironment.d );             // raise zero divide for DOMAIN error
+            FEGETENVD_GRP( OldEnvironment.d );		 // raise zero divide for DOMAIN error
             OldEnvironment.i.lo |= FE_DIVBYZERO;
-            FESETENVD( OldEnvironment.d );
+            FESETENVD_GRP( OldEnvironment.d );
             return ( minusInff.fval );			 // return -infinity
       }
       else 
       {                                                  // subnormal number
             xInHex.fval *= twoTo23;                      // scale up
+	    __NOOP;
+	    __NOOP;
+	    __NOOP;
             shiftedExp = ( xInHex.lval & 0x7f800000 ) >> 23;
             shiftedExp -= 150;                          // unbias exponent
       }
@@ -223,36 +240,41 @@ float logbf (  float x  )
 int ilogbf (  float x  )
 {
       hexsingle xInHex;
-      long int shiftedExp;
+      int32_t shiftedExp;
       
       xInHex.fval = x;
+      __NOOP;
+      __NOOP;
+      __NOOP;
       shiftedExp = ( xInHex.lval & 0x7f800000 ) >> 23;
       
-      if ( shiftedExp == 255 ) 
+      if (unlikely( shiftedExp == 255 )) 
       {                                                  // NaN or INF
             if (x != x)
                 return FP_ILOGBNAN;
             else
-                return INT_MAX;
+	    {
+		feraiseexcept( FE_INVALID );		 // raise invalid for DOMAIN error
+                return INT32_MAX;
+	    }
       }
       
-      if ( shiftedExp != 0 )                             // normal number
+      if (likely( shiftedExp != 0 ))                     // normal number
             shiftedExp -= 127;                           // unbias exponent
       else if ( x == 0.0 ) 
       {                                                  // zero
+            feraiseexcept( FE_INVALID );		 // raise invalid for DOMAIN error
             return FP_ILOGB0;			 	 // return -infinity
       }
       else 
       {                                                  // subnormal number
             xInHex.fval *= twoTo23;                      // scale up
+	    __NOOP;
+	    __NOOP;
+	    __NOOP;
             shiftedExp = ( xInHex.lval & 0x7f800000 ) >> 23;
             shiftedExp -= 150;                          // unbias exponent
       }
       
       return shiftedExp;
 }
-
-#else       /* __APPLE_CC__ version */
-#warning A higher version than gcc-932 is required.
-#endif      /* __APPLE_CC__ version */
-#endif      /* __APPLE_CC__ */
